@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "Restaurant Issue Manager",
+    "slug": "restaurant-issue-manager",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a1a2e"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.restaurant.issuemanager",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Allow microphone access for voice issue reporting"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a1a2e"
+      },
+      "package": "com.restaurant.issuemanager",
+      "permissions": [
+        "RECORD_AUDIO",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#e74c3c",
+          "sounds": []
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow restaurant app to record voice issue descriptions"
+        }
+      ]
+    ],
+    "scheme": "restaurant-issue-manager",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
