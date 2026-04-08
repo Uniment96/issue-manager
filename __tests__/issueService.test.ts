@@ -14,9 +14,8 @@ jest.mock('firebase/firestore', () => ({
   },
 }));
 
-jest.mock('../src/services/firebase/config', () => ({
-  db: { _isMockDb: true },
-}));
+// Use the manual mock — prevents real Firebase init in Node test environment
+jest.mock('../src/services/firebase/config');
 
 import {
   createIssue,
@@ -33,10 +32,16 @@ const mockDoc = doc as jest.MockedFunction<typeof doc>;
 const mockQuery = query as jest.MockedFunction<typeof query>;
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  // resetAllMocks clears both call history AND return value implementations,
+  // preventing mock state from leaking between tests.
+  jest.resetAllMocks();
   mockCollection.mockReturnValue({} as any);
   mockDoc.mockReturnValue({} as any);
   mockQuery.mockReturnValue({} as any);
+  // serverTimestamp is defined in the jest.mock factory but reset by resetAllMocks —
+  // restore it so each test sees a consistent sentinel value.
+  const { serverTimestamp } = require('firebase/firestore');
+  (serverTimestamp as jest.Mock).mockReturnValue({ _serverTimestamp: true });
 });
 
 describe('issueService', () => {
@@ -65,24 +70,24 @@ describe('issueService', () => {
       expect(id).toBe('new-doc-id');
     });
 
-    it('throws when db is null', async () => {
-      // Override config mock for this test
-      const configModule = require('../src/services/firebase/config');
-      const originalDb = configModule.db;
-      configModule.db = null;
-
-      await expect(
-        createIssue({ category: 'food', description: 'test', tableNumber: '1' }, 'uid', 'name')
-      ).rejects.toThrow('Firebase not initialized');
-
-      configModule.db = originalDb;
-    });
-
     it('propagates Firestore errors', async () => {
       mockAddDoc.mockRejectedValue(new Error('Firestore write failed'));
       await expect(
         createIssue({ category: 'food', description: 'test', tableNumber: '1' }, 'uid', 'name')
       ).rejects.toThrow('Firestore write failed');
+    });
+
+    it('includes serverTimestamp fields', async () => {
+      mockAddDoc.mockResolvedValue({ id: 'ts-doc' } as any);
+      await createIssue({ category: 'service', description: 'slow', tableNumber: '2' }, 'uid', 'Jane');
+
+      expect(mockAddDoc).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          createdAt: { _serverTimestamp: true },
+          updatedAt: { _serverTimestamp: true },
+        })
+      );
     });
   });
 
@@ -93,7 +98,10 @@ describe('issueService', () => {
 
       expect(mockUpdateDoc).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ status: 'IN_PROGRESS' })
+        expect.objectContaining({
+          status: 'IN_PROGRESS',
+          updatedAt: { _serverTimestamp: true },
+        })
       );
     });
 
@@ -102,14 +110,12 @@ describe('issueService', () => {
       await expect(updateIssueStatus('issue-123', 'RESOLVED')).rejects.toThrow('Permission denied');
     });
 
-    it('throws when db is null', async () => {
-      const configModule = require('../src/services/firebase/config');
-      const originalDb = configModule.db;
-      configModule.db = null;
-
-      await expect(updateIssueStatus('issue-123', 'OPEN')).rejects.toThrow('Firebase not initialized');
-
-      configModule.db = originalDb;
+    it('accepts all valid status values', async () => {
+      mockUpdateDoc.mockResolvedValue(undefined);
+      await updateIssueStatus('issue-1', 'OPEN');
+      await updateIssueStatus('issue-2', 'IN_PROGRESS');
+      await updateIssueStatus('issue-3', 'RESOLVED');
+      expect(mockUpdateDoc).toHaveBeenCalledTimes(3);
     });
   });
 
@@ -156,6 +162,40 @@ describe('issueService', () => {
       );
     });
 
+    it('maps Firestore Timestamp objects to milliseconds', () => {
+      const onUpdate = jest.fn();
+      const fakeTimestamp = { toMillis: () => 9999999 };
+      const mockSnapshot = {
+        forEach: (cb: Function) => {
+          cb({
+            id: 'doc-ts',
+            data: () => ({
+              category: 'hygiene',
+              description: 'Dirty table',
+              tableNumber: '4',
+              status: 'OPEN',
+              createdBy: 'uid-1',
+              createdByName: 'Bob',
+              assignedTo: null,
+              createdAt: fakeTimestamp,
+              updatedAt: fakeTimestamp,
+            }),
+          });
+        },
+      };
+      mockOnSnapshot.mockImplementation((_q, successCb: any) => {
+        successCb(mockSnapshot);
+        return jest.fn();
+      });
+
+      subscribeToIssues('manager', 'uid-1', onUpdate, jest.fn());
+      expect(onUpdate).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ createdAt: 9999999, updatedAt: 9999999 }),
+        ])
+      );
+    });
+
     it('calls onError when snapshot fails', () => {
       const onError = jest.fn();
       mockOnSnapshot.mockImplementation((_q, _success, errorCb: any) => {
@@ -165,19 +205,6 @@ describe('issueService', () => {
 
       subscribeToIssues('waiter', 'uid-1', jest.fn(), onError);
       expect(onError).toHaveBeenCalledWith(expect.any(Error));
-    });
-
-    it('returns no-op when db is null', () => {
-      const configModule = require('../src/services/firebase/config');
-      const originalDb = configModule.db;
-      configModule.db = null;
-
-      const onError = jest.fn();
-      const unsub = subscribeToIssues('manager', 'uid-1', jest.fn(), onError);
-      expect(onError).toHaveBeenCalledWith(expect.any(Error));
-      expect(typeof unsub).toBe('function');
-
-      configModule.db = originalDb;
     });
 
     it('waiter query adds createdBy constraint', () => {
@@ -203,7 +230,6 @@ describe('issueService', () => {
 
     it('manager query adds no extra constraints', () => {
       const { where } = require('firebase/firestore');
-      (where as jest.Mock).mockClear();
       mockOnSnapshot.mockReturnValue(jest.fn() as any);
       subscribeToIssues('manager', 'mgr-uid', jest.fn(), jest.fn());
       expect(where).not.toHaveBeenCalled();

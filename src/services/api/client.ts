@@ -12,7 +12,7 @@ export const apiClient = axios.create({
 // Attach Firebase token to every request
 apiClient.interceptors.request.use(async (config) => {
   try {
-    const token = await auth?.currentUser?.getIdToken();
+    const token = await auth.currentUser?.getIdToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

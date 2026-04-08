@@ -1,10 +1,21 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { initializeAuth, getAuth, inMemoryPersistence, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const IS_MOCK = process.env.EXPO_PUBLIC_DEV_MOCK === 'true';
+// metro.config.js maps both 'firebase/auth' and '@firebase/auth' to the RN build
+// so that registerAuth('ReactNative') is called as a side-effect and
+// getReactNativePersistence is exported. TypeScript still sees the browser
+// types, so we cast through unknown.
+import type { initializeAuth as InitializeAuth, getAuth as GetAuth, Auth, Persistence } from 'firebase/auth';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const firebaseAuth = require('firebase/auth') as {
+  initializeAuth: typeof InitializeAuth;
+  getAuth: typeof GetAuth;
+  getReactNativePersistence: (storage: unknown) => Persistence;
+};
 
-const firebaseConfig = {
+// ✅ Firebase config (from env)
+export const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? '',
   authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN ?? '',
   projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ?? '',
@@ -13,23 +24,57 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ?? '',
 };
 
-// In mock mode skip Firebase entirely — no native modules needed.
-let app: FirebaseApp | null = null;
-let auth: Auth | null = null;
-let db: Firestore | null = null;
+// ✅ DEV check for missing env variables
+if (__DEV__) {
+  const missing = Object.entries(firebaseConfig)
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
 
-if (!IS_MOCK) {
-  const isFirstInit = getApps().length === 0;
-  app = isFirstInit ? initializeApp(firebaseConfig) : getApp();
-  try {
-    auth = isFirstInit
-      ? initializeAuth(app, { persistence: inMemoryPersistence })
-      : getAuth(app);
-  } catch (e) {
-    console.warn('Firebase Auth init failed:', e);
+  if (missing.length > 0) {
+    console.warn(
+      `[Firebase] Missing env vars: ${missing.join(', ')}.\nCheck your .env file.`
+    );
   }
-  db = getFirestore(app);
 }
 
-export { auth, db };
+// ✅ Initialize Firebase App safely
+const app: FirebaseApp =
+  getApps().length === 0
+    ? initializeApp(firebaseConfig)
+    : getApp();
+
+// ✅ Initialize Auth with React Native persistence
+// - initializeAuth + getReactNativePersistence come from the RN build (via metro.config.js)
+// - On hot reload the app persists but auth was already initialized, so we reuse via getAuth
+let auth: Auth;
+
+try {
+  auth = firebaseAuth.initializeAuth(app, {
+    persistence: firebaseAuth.getReactNativePersistence(AsyncStorage),
+  });
+} catch (error: any) {
+  if (error?.code === 'auth/already-initialized') {
+    auth = firebaseAuth.getAuth(app);
+  } else {
+    throw error;
+  }
+}
+
+// ✅ Firestore
+const db: Firestore = getFirestore(app);
+
+// ✅ Optional: Health check helper (useful for debugging)
+export const checkFirebaseConnection = async () => {
+  try {
+    const { collection, getDocs } = await import('firebase/firestore');
+    const snapshot = await getDocs(collection(db, 'health_check'));
+    console.log('✅ Firebase connected:', snapshot.size);
+    return true;
+  } catch (error) {
+    console.log('❌ Firebase connection failed:', error);
+    return false;
+  }
+};
+
+export { app, auth, db };
 export default app;

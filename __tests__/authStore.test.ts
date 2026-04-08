@@ -13,17 +13,6 @@ jest.mock('../src/services/firebase/authService', () => ({
   signUp: jest.fn(),
 }));
 
-jest.mock('../src/services/mock/mockData', () => ({
-  MOCK_USERS: {
-    'waiter@test.com': {
-      uid: 'mock-waiter-1',
-      email: 'waiter@test.com',
-      displayName: 'Alex Kumar',
-      role: 'waiter',
-    },
-  },
-}));
-
 const AsyncStorage = require('@react-native-async-storage/async-storage');
 const { signIn, signUp } = require('../src/services/firebase/authService');
 
@@ -40,9 +29,10 @@ beforeEach(() => {
     isLoading: false,
     isAuthenticated: false,
   });
-  jest.clearAllMocks();
-  // Ensure we're NOT in mock mode for Firebase tests
-  process.env.EXPO_PUBLIC_DEV_MOCK = 'false';
+  jest.resetAllMocks();
+  // Restore default resolved values after reset
+  AsyncStorage.setItem.mockResolvedValue(undefined);
+  AsyncStorage.removeItem.mockResolvedValue(undefined);
 });
 
 describe('authStore', () => {
@@ -71,7 +61,7 @@ describe('authStore', () => {
     });
   });
 
-  describe('login (real Firebase mode)', () => {
+  describe('login', () => {
     it('calls signIn and updates state on success', async () => {
       signIn.mockResolvedValue(MOCK_USER);
       await useAuthStore.getState().login('test@example.com', 'password');
@@ -101,26 +91,10 @@ describe('authStore', () => {
     });
   });
 
-  describe('login (mock mode)', () => {
-    beforeEach(() => {
-      process.env.EXPO_PUBLIC_DEV_MOCK = 'true';
-    });
-
-    afterEach(() => {
-      process.env.EXPO_PUBLIC_DEV_MOCK = 'false';
-    });
-
-    it('logs in mock user without calling Firebase', async () => {
-      // Re-import store after env change would normally be needed,
-      // but since IS_MOCK is evaluated at module load, we test the behaviour directly
-      // by verifying signIn is NOT called for mock emails in mock mode
-      // (This test validates the mock path logic exists)
-      expect(signIn).not.toHaveBeenCalled();
-    });
-  });
-
   describe('logout', () => {
     it('clears user state and AsyncStorage', async () => {
+      const { signOut } = require('../src/services/firebase/authService');
+      signOut.mockResolvedValue(undefined);
       useAuthStore.setState({ user: MOCK_USER, isAuthenticated: true });
       await useAuthStore.getState().logout();
 

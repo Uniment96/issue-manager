@@ -1,3 +1,7 @@
+// Mock Firebase config FIRST — prevents real Firebase initialization
+// (config.ts would crash in Node with auth/invalid-api-key on empty env vars)
+jest.mock('../src/services/firebase/config');
+
 import { flushQueue, MAX_RETRIES } from '../src/services/offline/syncService';
 import * as offlineQueue from '../src/services/offline/offlineQueue';
 import * as issueService from '../src/services/firebase/issueService';
@@ -38,7 +42,7 @@ const makeUpdateOp = (overrides: Partial<OfflineOperation> = {}): OfflineOperati
 });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  jest.resetAllMocks();
   mockDequeue.mockResolvedValue(undefined);
   mockIncrementRetry.mockResolvedValue(undefined);
   mockCreateIssue.mockResolvedValue('new-firestore-id');
@@ -125,7 +129,9 @@ describe('syncService', () => {
     });
 
     it('continues processing after one operation fails', async () => {
-      mockCreateIssue.mockRejectedValueOnce(new Error('fail')).mockResolvedValueOnce('id-2');
+      mockCreateIssue
+        .mockRejectedValueOnce(new Error('fail'))
+        .mockResolvedValueOnce('id-2');
       mockLoadQueue.mockResolvedValue([
         makeCreateOp({ id: 'op-fail' }),
         makeCreateOp({ id: 'op-ok' }),
@@ -136,7 +142,7 @@ describe('syncService', () => {
       expect(mockDequeue).toHaveBeenCalledWith('op-ok');
     });
 
-    it('throws error for UPDATE_ISSUE with missing id', async () => {
+    it('increments retry for UPDATE_ISSUE with missing id', async () => {
       const badOp: OfflineOperation = {
         ...makeUpdateOp(),
         payload: { category: 'food', description: 'desc', tableNumber: '5' }, // no id

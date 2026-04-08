@@ -16,6 +16,8 @@ export default function ManagerLayout() {
           presentation: 'modal',
         }}
       />
+      <Stack.Screen name="dish-intelligence" />
+      <Stack.Screen name="dish/[id]" />
     </Stack>
   );
 }

@@ -26,19 +26,16 @@ function toIssue(id: string, data: Record<string, unknown>): Issue {
     createdByName: data.createdByName as string,
     assignedTo: data.assignedTo as string | undefined,
     createdAt:
-      data.createdAt instanceof Timestamp
-        ? data.createdAt.toMillis()
+      typeof (data.createdAt as any)?.toMillis === 'function'
+        ? (data.createdAt as Timestamp).toMillis()
         : (data.createdAt as number) ?? Date.now(),
     updatedAt:
-      data.updatedAt instanceof Timestamp
-        ? data.updatedAt.toMillis()
+      typeof (data.updatedAt as any)?.toMillis === 'function'
+        ? (data.updatedAt as Timestamp).toMillis()
         : (data.updatedAt as number) ?? Date.now(),
   };
 }
 
-/**
- * Build role-scoped Firestore query constraints.
- */
 function getRoleConstraints(role: UserRole, uid: string): QueryConstraint[] {
   switch (role) {
     case 'waiter':
@@ -48,22 +45,18 @@ function getRoleConstraints(role: UserRole, uid: string): QueryConstraint[] {
     case 'supervisor':
       return [where('category', 'in', ['service', 'hygiene'])];
     case 'manager':
-      return []; // sees everything
+      return [];
     default:
       return [];
   }
 }
 
-/**
- * Subscribe to issues filtered by role. Returns an unsubscribe function.
- */
 export function subscribeToIssues(
   role: UserRole,
   uid: string,
   onUpdate: (issues: Issue[]) => void,
   onError: (err: Error) => void
 ): () => void {
-  if (!db) { onError(new Error('Firebase not initialized')); return () => {}; }
   const constraints = getRoleConstraints(role, uid);
   const q = query(
     collection(db, ISSUES_COLLECTION),
@@ -89,7 +82,6 @@ export async function createIssue(
   uid: string,
   displayName: string
 ): Promise<string> {
-  if (!db) throw new Error('Firebase not initialized');
   const ref = await addDoc(collection(db, ISSUES_COLLECTION), {
     ...payload,
     status: 'OPEN' as IssueStatus,
@@ -103,7 +95,6 @@ export async function createIssue(
 }
 
 export async function updateIssueStatus(id: string, status: IssueStatus): Promise<void> {
-  if (!db) throw new Error('Firebase not initialized');
   await updateDoc(doc(db, ISSUES_COLLECTION, id), {
     status,
     updatedAt: serverTimestamp(),

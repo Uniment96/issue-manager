@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -16,6 +17,7 @@ import { useIssueSubscription } from '@/hooks/useIssueSubscription';
 import IssueCard from '@/components/IssueCard';
 import { COLORS, DELAY_THRESHOLD_MS } from '@/constants';
 import { Issue } from '@/types';
+import { runFirebaseDiagnostic } from '@/utils/firebaseDiagnostic';
 
 type FilterTab = 'all' | 'active' | 'delayed' | 'resolved';
 
@@ -29,6 +31,29 @@ const FILTER_TABS: { key: FilterTab; label: string; color: string }[] = [
 export default function ManagerDashboard() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const [diagRunning, setDiagRunning] = useState(false);
+
+  const handleDiagnostic = async () => {
+    setDiagRunning(true);
+    try {
+      const result = await runFirebaseDiagnostic();
+      const failed = Object.entries(result.steps)
+        .filter(([, s]) => s.status === 'fail')
+        .map(([name, s]) => `• ${name}: ${s.message}`)
+        .join('\n');
+      Alert.alert(
+        result.overall === 'pass' ? '✅ Firebase OK' : '❌ Firebase Issues',
+        result.overall === 'pass'
+          ? 'All steps passed. Check console for details.'
+          : `Failed steps:\n\n${failed}`,
+        [{ text: 'OK' }]
+      );
+    } catch (e: any) {
+      Alert.alert('Diagnostic Error', e?.message ?? String(e));
+    } finally {
+      setDiagRunning(false);
+    }
+  };
   const { issues, isLoading } = useIssueStore();
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
 
@@ -70,6 +95,24 @@ export default function ManagerDashboard() {
           <Text style={styles.headerSub}>Hi, {user?.displayName?.split(' ')[0]}</Text>
         </View>
         <View style={styles.headerActions}>
+          {__DEV__ && (
+            <TouchableOpacity
+              style={styles.diagBtn}
+              onPress={handleDiagnostic}
+              disabled={diagRunning}
+            >
+              {diagRunning
+                ? <ActivityIndicator size="small" color="#fff" />
+                : <Text style={styles.diagBtnText}>🔥</Text>
+              }
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            style={styles.dishBtn}
+            onPress={() => router.push('/(manager)/dish-intelligence')}
+          >
+            <Text style={styles.dishBtnText}>🧠 Dishes</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.addStaffBtn}
             onPress={() => router.push('/(manager)/add-staff')}
@@ -212,6 +255,26 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 22, fontWeight: '900', color: '#fff' },
   headerSub: { color: 'rgba(255,255,255,0.65)', fontSize: 13, marginTop: 3 },
   headerActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  diagBtn: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  diagBtnText: { fontSize: 16 },
+  dishBtn: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
+  dishBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   addStaffBtn: {
     backgroundColor: COLORS.accent,
     paddingHorizontal: 14,

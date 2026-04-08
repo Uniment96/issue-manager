@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useIssueStore } from '@/store/issueStore';
 import { useUIStore } from '@/store/uiStore';
@@ -144,9 +145,18 @@ export default function WaiterDashboard() {
               <Text style={styles.headerTitle}>Report Issue</Text>
               <Text style={styles.headerSub}>Hi, {user?.displayName?.split(' ')[0]}</Text>
             </View>
-            <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
-              <Text style={styles.logoutText}>Logout</Text>
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.rateDishBtn}
+                onPress={() => router.push('/(waiter)/feedback')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.rateDishText}>⭐ Rate Dish</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+                <Text style={styles.logoutText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Category selection */}
@@ -266,6 +276,16 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: 2,
   },
+  headerActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  rateDishBtn: {
+    backgroundColor: '#f39c12' + '18',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#f39c12' + '50',
+  },
+  rateDishText: { color: '#e67e22', fontWeight: '700', fontSize: 13 },
   logoutBtn: {
     backgroundColor: COLORS.error + '18',
     paddingHorizontal: 14,
