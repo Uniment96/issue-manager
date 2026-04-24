@@ -54,6 +54,7 @@ export default function ManagerDashboard() {
       setDiagRunning(false);
     }
   };
+
   const { issues, isLoading } = useIssueStore();
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
 
@@ -91,7 +92,7 @@ export default function ManagerDashboard() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>📊 Manager View</Text>
+          <Text style={styles.headerTitle}>📋 Issues</Text>
           <Text style={styles.headerSub}>Hi, {user?.displayName?.split(' ')[0]}</Text>
         </View>
         <View style={styles.headerActions}>
@@ -101,18 +102,13 @@ export default function ManagerDashboard() {
               onPress={handleDiagnostic}
               disabled={diagRunning}
             >
-              {diagRunning
-                ? <ActivityIndicator size="small" color="#fff" />
-                : <Text style={styles.diagBtnText}>🔥</Text>
-              }
+              {diagRunning ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.diagBtnText}>🔥</Text>
+              )}
             </TouchableOpacity>
           )}
-          <TouchableOpacity
-            style={styles.dishBtn}
-            onPress={() => router.push('/(manager)/dish-intelligence')}
-          >
-            <Text style={styles.dishBtnText}>🧠 Dishes</Text>
-          </TouchableOpacity>
           <TouchableOpacity
             style={styles.addStaffBtn}
             onPress={() => router.push('/(manager)/add-staff')}
@@ -266,15 +262,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.2)',
   },
   diagBtnText: { fontSize: 16 },
-  dishBtn: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-  },
-  dishBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   addStaffBtn: {
     backgroundColor: COLORS.accent,
     paddingHorizontal: 14,
@@ -289,10 +276,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   logoutText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  statsRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
+  statsRow: { paddingHorizontal: 16, paddingVertical: 12 },
   tabs: {
     flexDirection: 'row',
     backgroundColor: COLORS.surface,

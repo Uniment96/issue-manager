@@ -4,7 +4,7 @@ import { COLORS } from '@/constants';
 export default function ManagerLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
+      <Stack.Screen name="(tabs)" />
       <Stack.Screen
         name="add-staff"
         options={{
@@ -16,7 +16,6 @@ export default function ManagerLayout() {
           presentation: 'modal',
         }}
       />
-      <Stack.Screen name="dish-intelligence" />
       <Stack.Screen name="dish/[id]" />
     </Stack>
   );

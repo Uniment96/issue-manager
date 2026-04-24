@@ -54,7 +54,7 @@ const DISH_CATEGORIES = Object.entries(DISH_CATEGORY_CONFIG) as [DishCategory, {
 const ACTION_TYPES = Object.entries(MANAGER_ACTION_CONFIG) as [ManagerActionType, { label: string; emoji: string; color: string; description: string }][];
 const ACTION_STATUSES: ManagerActionStatus[] = ['pending', 'in_progress', 'resolved'];
 
-export default function DishIntelligence() {
+export default function DishesTab() {
   const user = useAuthStore((s) => s.user);
   const { showToast } = useUIStore();
   const {
@@ -71,13 +71,11 @@ export default function DishIntelligence() {
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Add Dish modal state
   const [showAddDish, setShowAddDish] = useState(false);
   const [newDishName, setNewDishName] = useState('');
   const [newDishCat, setNewDishCat] = useState<DishCategory>('main');
   const [addingDish, setAddingDish] = useState(false);
 
-  // Action modal state
   const [actionTarget, setActionTarget] = useState<DishHealthScore | null>(null);
   const [actionType, setActionType] = useState<ManagerActionType>('flag_recipe');
   const [actionReason, setActionReason] = useState('');
@@ -155,11 +153,8 @@ export default function DishIntelligence() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Header */}
+      {/* Header — no back button since this is a tab */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>🧠 Dish Intelligence</Text>
         <TouchableOpacity style={styles.addDishBtn} onPress={() => setShowAddDish(true)}>
           <Text style={styles.addDishText}>+ Dish</Text>
@@ -180,7 +175,7 @@ export default function DishIntelligence() {
         })}
       </ScrollView>
 
-      {/* Tabs */}
+      {/* Internal Tabs */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
         {TABS.map((tab) => (
           <TouchableOpacity
@@ -204,7 +199,6 @@ export default function DishIntelligence() {
           keyExtractor={(i) => i.key}
           renderItem={() => (
             <View style={styles.content}>
-              {/* OVERVIEW TAB */}
               {activeTab === 'overview' && (
                 <>
                   {healthScores.length === 0 ? (
@@ -239,7 +233,6 @@ export default function DishIntelligence() {
                 </>
               )}
 
-              {/* ISSUES TAB */}
               {activeTab === 'issues' && (
                 <>
                   <Text style={styles.tabSectionLabel}>
@@ -258,7 +251,6 @@ export default function DishIntelligence() {
                 </>
               )}
 
-              {/* LIVE FEED TAB */}
               {activeTab === 'feed' && (
                 <>
                   <Text style={styles.tabSectionLabel}>
@@ -277,7 +269,6 @@ export default function DishIntelligence() {
                 </>
               )}
 
-              {/* INSIGHTS TAB */}
               {activeTab === 'insights' && (
                 <>
                   <Text style={styles.tabSectionLabel}>
@@ -296,7 +287,6 @@ export default function DishIntelligence() {
                 </>
               )}
 
-              {/* ACTIONS TAB */}
               {activeTab === 'actions' && (
                 <>
                   <Text style={styles.tabSectionLabel}>Manager Actions ({actions.length})</Text>
@@ -385,7 +375,7 @@ export default function DishIntelligence() {
                 style={[styles.actionOption, actionType === type && { borderColor: cfg.color, backgroundColor: cfg.color + '12' }]}
                 onPress={() => setActionType(type)}
               >
-                <Text style={[styles.actionOptionEmoji]}>{cfg.emoji}</Text>
+                <Text style={styles.actionOptionEmoji}>{cfg.emoji}</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.actionOptionLabel, { color: cfg.color }]}>{cfg.label}</Text>
                   <Text style={styles.actionOptionDesc}>{cfg.description}</Text>
@@ -549,12 +539,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 8,
+    paddingBottom: 12,
     backgroundColor: COLORS.primary,
   },
-  backBtn: { padding: 4 },
-  backText: { color: 'rgba(255,255,255,0.8)', fontWeight: '700', fontSize: 14 },
-  headerTitle: { fontSize: 18, fontWeight: '900', color: '#fff' },
+  headerTitle: { fontSize: 20, fontWeight: '900', color: '#fff' },
   addDishBtn: {
     backgroundColor: COLORS.accent,
     paddingHorizontal: 14,
@@ -605,8 +594,6 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: 'center', paddingVertical: 40 },
   emptyIcon: { fontSize: 44, marginBottom: 10 },
   emptyText: { color: COLORS.textSecondary, fontSize: 15, textAlign: 'center', maxWidth: 260 },
-
-  // Dish Row
   dishRow: {
     backgroundColor: COLORS.surface,
     borderRadius: 14,
@@ -636,8 +623,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   actionBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-
-  // Insight Card
   insightCard: {
     backgroundColor: COLORS.surface,
     borderRadius: 12,
@@ -655,8 +640,6 @@ const styles = StyleSheet.create({
   },
   insightIcon: { fontSize: 20 },
   insightText: { flex: 1, fontSize: 14, color: COLORS.textPrimary, lineHeight: 20 },
-
-  // Action Card
   actionCard: {
     backgroundColor: COLORS.surface,
     borderRadius: 14,
@@ -679,8 +662,6 @@ const styles = StyleSheet.create({
   actionStatusBtns: { flexDirection: 'row', gap: 8, marginTop: 10 },
   statusBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8 },
   statusBtnText: { fontSize: 12, fontWeight: '800' },
-
-  // Modals
   modal: { flex: 1, backgroundColor: COLORS.surface },
   modalHeader: {
     flexDirection: 'row',
@@ -732,7 +713,6 @@ const styles = StyleSheet.create({
   },
   modalSubmitDisabled: { opacity: 0.6 },
   modalSubmitText: { color: '#fff', fontSize: 16, fontWeight: '900' },
-  // Action option in modal
   actionOption: {
     flexDirection: 'row',
     alignItems: 'center',
