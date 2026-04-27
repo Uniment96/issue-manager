@@ -3,23 +3,24 @@ import { DishCategory, DishHealthStatus, DishIssueTag, IssueCategory, IssueStatu
 export const COLORS = {
   // Status colors
   OPEN: '#e74c3c',        // Red
-  IN_PROGRESS: '#f39c12', // Yellow/Amber
-  RESOLVED: '#27ae60',    // Green
+  IN_PROGRESS: '#f59e0b', // Amber
+  RESOLVED: '#22c55e',    // Green
 
   // App palette
-  primary: '#1a1a2e',
-  primaryLight: '#16213e',
-  accent: '#e94560',
+  primary: '#3B82F6',
+  primaryLight: '#2563EB',
+  accent: '#2563EB',
+  accentLight: '#EFF6FF',
   surface: '#ffffff',
-  surfaceAlt: '#f8f9fa',
-  border: '#e0e0e0',
-  textPrimary: '#1a1a2e',
-  textSecondary: '#6c757d',
+  surfaceAlt: '#F8F9FA',
+  border: '#E2E8F0',
+  textPrimary: '#0F172A',
+  textSecondary: '#64748B',
   textLight: '#ffffff',
-  error: '#e74c3c',
-  warning: '#f39c12',
-  success: '#27ae60',
-  info: '#3498db',
+  error: '#ef4444',
+  warning: '#f59e0b',
+  success: '#22c55e',
+  info: '#3B82F6',
 
   // Category colors
   food: '#e67e22',

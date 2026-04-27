@@ -224,17 +224,19 @@ const statStyles = StyleSheet.create({
     borderRadius: 14,
     padding: 14,
     marginRight: 10,
-    minWidth: 80,
+    minWidth: 84,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
     borderTopWidth: 3,
-    shadowColor: '#000',
+    shadowColor: '#64748B',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.07,
+    shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
   },
   value: { fontSize: 26, fontWeight: '900' },
-  label: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '700', marginTop: 2 },
+  label: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '600', marginTop: 2 },
 });
 
 const styles = StyleSheet.create({
@@ -263,10 +265,12 @@ const styles = StyleSheet.create({
   },
   diagBtnText: { fontSize: 16 },
   addStaffBtn: {
-    backgroundColor: COLORS.accent,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
   addStaffText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   logoutBtn: {

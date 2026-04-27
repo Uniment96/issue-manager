@@ -8,16 +8,16 @@ export default function ManagerTabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: COLORS.primary,
-          borderTopColor: 'rgba(255,255,255,0.12)',
+          backgroundColor: COLORS.surface,
+          borderTopColor: COLORS.border,
           borderTopWidth: 1,
-          height: 60,
+          height: 62,
           paddingBottom: 10,
           paddingTop: 6,
         },
-        tabBarActiveTintColor: '#ffffff',
-        tabBarInactiveTintColor: 'rgba(255,255,255,0.38)',
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: '#94A3B8',
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}
     >
       <Tabs.Screen
